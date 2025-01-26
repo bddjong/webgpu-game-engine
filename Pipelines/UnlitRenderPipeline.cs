@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Silk.NET.WebGPU;
+using SourEngine.Utils;
 
 namespace SourEngine.Pipelines;
 
@@ -13,32 +14,9 @@ public unsafe class UnlitRenderPipeline
         _engine = engine;
     }
 
-    private ShaderModule* CreateShaderModule()
-    {
-        string shaderCode = File.ReadAllText("Shaders/unlit.wgsl");
-        
-        ShaderModuleWGSLDescriptor wgslDescriptor = new ShaderModuleWGSLDescriptor
-        {
-            Code = (byte*)Marshal.StringToHGlobalAnsi(shaderCode),
-            Chain =
-            {
-                SType = SType.ShaderModuleWgslDescriptor
-            }
-        };
-
-        ShaderModuleDescriptor descriptor = new ShaderModuleDescriptor();
-        descriptor.NextInChain = &wgslDescriptor.Chain;
-        
-        ShaderModule* shaderModule = _engine.WGPU.DeviceCreateShaderModule(_engine.Device, descriptor);
-        
-        Console.WriteLine("Created shader module: " + wgslDescriptor.Chain.SType);
-
-        return shaderModule;
-    }
-
     public void Initialize()
     {
-        ShaderModule* shaderModule = CreateShaderModule();
+        ShaderModule* shaderModule = WebGPUUtil.ShaderModule.CreateShaderModule(_engine, "Shaders/unlit.wgsl");
 
         VertexState vertexState = new VertexState
         {
