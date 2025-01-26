@@ -117,7 +117,8 @@ public unsafe class Engine : IDisposable
             Width = (uint)window.Size.X,
             Height = (uint)window.Size.Y,
             Format = TextureFormat.Bgra8Unorm,
-            PresentMode = PresentMode.Fifo
+            PresentMode = PresentMode.Fifo,
+            Usage = TextureUsage.RenderAttachment
         };
         
         wgpu.SurfaceConfigure(surface, configuration);
