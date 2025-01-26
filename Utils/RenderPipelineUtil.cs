@@ -5,7 +5,11 @@ namespace SourEngine.Utils;
 
 public unsafe class RenderPipelineUtil
 {
-    public RenderPipeline* Create(Engine engine, ShaderModule* shaderModule, string vertexFnName = "main_vs", string fragmentFnName = "main_fs")
+    public RenderPipeline* Create(Engine engine, 
+        ShaderModule* shaderModule, 
+        PipelineLayout* pipelineLayout,
+        string vertexFnName = "main_vs", 
+        string fragmentFnName = "main_fs")
     {
         VertexAttribute* vertexAttributes = stackalloc VertexAttribute[2];
         vertexAttributes[0].Format = VertexFormat.Float32x3;
@@ -60,6 +64,7 @@ public unsafe class RenderPipelineUtil
 
         RenderPipelineDescriptor pipelineDescriptor = new RenderPipelineDescriptor
         {
+            Layout = pipelineLayout,
             Vertex = vertexState,
             Fragment = &fragmentState,
             Multisample = new MultisampleState

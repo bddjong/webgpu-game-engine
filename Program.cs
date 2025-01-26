@@ -1,4 +1,6 @@
-﻿namespace SourEngine
+﻿using Silk.NET.Maths;
+
+namespace SourEngine
 {
     public static class Program
     {
@@ -9,6 +11,9 @@
             var unlitRenderPipeline = new Pipelines.UnlitRenderPipeline(engine);
             var vertexBuffer = new Buffers.VertexBuffer(engine);
             var indexBuffer = new Buffers.IndexBuffer(engine);
+
+            float scale = 1f;
+            int scaleDirection = 1;
 
             engine.OnInitialize += () =>
             {
@@ -25,7 +30,21 @@
                     2, 3, 0,
                 ]);
             };
-            engine.OnRender += () => { unlitRenderPipeline.Render(vertexBuffer, indexBuffer); };
+            engine.OnRender += () =>
+            {
+                if (scale > 2)
+                {
+                    scaleDirection = -1;
+                } else if (scale < 0.5)
+                {
+                    scaleDirection = 1;
+                }
+                
+                scale += 0.001f * scaleDirection;
+                
+                unlitRenderPipeline.Transform = Matrix4X4.CreateScale(scale, scale, 1.0f);
+                unlitRenderPipeline.Render(vertexBuffer, indexBuffer);
+            };
 
             engine.OnDispose += () =>
             {
