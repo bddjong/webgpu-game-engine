@@ -72,6 +72,8 @@ public unsafe class UnlitRenderPipeline
         _renderPipeline = _engine.WGPU.DeviceCreateRenderPipeline(_engine.Device, pipelineDescriptor);
         
         Console.WriteLine("Created render pipeline");
+        
+        _engine.WGPU.ShaderModuleRelease(shaderModule);
     }
 
     public void Render()
