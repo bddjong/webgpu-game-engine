@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using Silk.NET.Maths;
 using Silk.NET.WebGPU;
 using Silk.NET.Windowing;
+using Monitor = Silk.NET.Windowing.Monitor;
 
 namespace SourEngine;
 
@@ -31,10 +32,12 @@ public unsafe class Engine : IDisposable
         WindowOptions windowOptions = WindowOptions.Default;
         windowOptions.Title = "Hello, World!";
         windowOptions.Size = new Vector2D<int>(800, 600);
-
+        
         _window = Window.Create(WindowOptions.Default);
 
         _window.Initialize();
+        //TODO: save last monitor location
+        _window.Monitor = Monitor.GetMonitors(null).Last();
 
         // API setup
         CreateApi();
