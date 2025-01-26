@@ -18,6 +18,7 @@ public unsafe class Engine : IDisposable
     private TextureView* _surfaceTextureView;
 
     public Action OnInitialize;
+    public Action OnRender;
     
     public WebGPU WGPU { get; private set; }
     public Device* Device { get; private set; }
@@ -48,7 +49,7 @@ public unsafe class Engine : IDisposable
         // Window hooks
         _window.Load += OnLoad;
         _window.Update += OnUpdate;
-        _window.Render += OnRender;
+        _window.Render += OnRenderWindow;
 
         OnInitialize?.Invoke();
         
@@ -155,9 +156,12 @@ public unsafe class Engine : IDisposable
     }
     
 
-    public void OnRender(double deltaTime)
+    public void OnRenderWindow(double deltaTime)
     {
         BeforeRender();
+        
+        OnRender?.Invoke();
+        
         AfterRender();
     }
     

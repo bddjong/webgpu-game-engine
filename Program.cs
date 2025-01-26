@@ -8,6 +8,7 @@
             
             var unlitRenderPipeline = new Pipelines.UnlitRenderPipeline(engine);
             engine.OnInitialize += unlitRenderPipeline.Initialize;
+            engine.OnRender += unlitRenderPipeline.Render;
             
             engine.Initialize();
             engine.Dispose();

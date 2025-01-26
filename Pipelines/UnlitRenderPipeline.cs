@@ -95,4 +95,10 @@ public unsafe class UnlitRenderPipeline
         
         Console.WriteLine("Created render pipeline");
     }
+
+    public void Render()
+    {
+        _engine.WGPU.RenderPassEncoderSetPipeline(_engine.CurrentRenderPassEncoder, _renderPipeline);
+        _engine.WGPU.RenderPassEncoderDraw(_engine.CurrentRenderPassEncoder, 3, 1, 0, 0);
+    }
 }
