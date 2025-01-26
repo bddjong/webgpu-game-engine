@@ -8,6 +8,7 @@
 
             var unlitRenderPipeline = new Pipelines.UnlitRenderPipeline(engine);
             var vertexBuffer = new Buffers.VertexBuffer(engine);
+            var indexBuffer = new Buffers.IndexBuffer(engine);
 
             engine.OnInitialize += () =>
             {
@@ -15,22 +16,24 @@
                 vertexBuffer.Initialize([
                     // First triangle
                     -0.5f, -0.5f, 0f, 1, 0, 0, 1,
-                     0.5f, -0.5f, 0f, 0, 1, 0, 1,
-                    -0.5f, 0.5f, 0f, 0, 0, 1, 1,
-                    
-                    // Second triangle
-                     0.5f, -0.5f, 0f, 1, 0, 0, 1,
-                     0.5f,  0.5f, 0f, 0, 1, 0, 1,
-                    -0.5f, 0.5f, 0f, 0, 0, 1, 1
+                    0.5f, -0.5f, 0f, 0, 1, 0, 1,
+                    0.5f, 0.5f, 0f, 0, 0, 1, 1,
+                    -0.5f, 0.5f, 0f, 1, 0, 1, 1,
                 ], 6);
+                indexBuffer.Initialize([
+                    0, 1, 2,
+                    2, 3, 0,
+                ]);
             };
-            engine.OnRender += () =>
+            engine.OnRender += () => { unlitRenderPipeline.Render(vertexBuffer, indexBuffer); };
+
+            engine.OnDispose += () =>
             {
-                unlitRenderPipeline.Render(vertexBuffer);
+                unlitRenderPipeline.Dispose();
+                vertexBuffer.Dispose();
+                indexBuffer.Dispose();
             };
 
-            engine.OnDispose += unlitRenderPipeline.Dispose;
-            
             engine.Initialize();
             engine.Dispose();
         }
