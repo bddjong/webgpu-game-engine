@@ -19,6 +19,7 @@ public unsafe class Engine : IDisposable
 
     public Action OnInitialize;
     public Action OnRender;
+    public Action OnDispose;
 
     public WebGPU WGPU { get; private set; }
     public Device* Device { get; private set; }
@@ -228,6 +229,8 @@ public unsafe class Engine : IDisposable
 
     public void Dispose()
     {
+        OnDispose?.Invoke();
+        
         Console.WriteLine("Disposing WebGPU resources");
         WGPU.DeviceDestroy(Device);
         Console.WriteLine("Destroyed WebGPU Device");
