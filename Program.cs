@@ -1,3 +1,11 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-Console.WriteLine("Hello, World!");
+﻿namespace SourEngine
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Engine engine = new Engine();
+            engine.Initialize();
+        }
+    }
+}
