@@ -19,7 +19,7 @@ public unsafe class Engine : IDisposable
 
     public Action OnInitialize;
     public Action OnRender;
-    
+
     public WebGPU WGPU { get; private set; }
     public Device* Device { get; private set; }
     public RenderPassEncoder* CurrentRenderPassEncoder { get; private set; }
@@ -41,7 +41,9 @@ public unsafe class Engine : IDisposable
         CreateSurface();
         CreateAdapter();
         CreateDevice();
-        
+
+        LogAdapterProperties();
+
         // Configuration
         ConfigureSurface();
         ConfigureDebugCallback();
@@ -52,8 +54,20 @@ public unsafe class Engine : IDisposable
         _window.Render += OnRenderWindow;
 
         OnInitialize?.Invoke();
-        
+
         _window.Run();
+    }
+
+    private void LogAdapterProperties()
+    {
+        AdapterProperties* properties = stackalloc AdapterProperties[1];
+
+        WGPU.AdapterGetProperties(_adapter, properties);
+
+        Console.WriteLine("Adapter properties:");
+        Console.WriteLine(" - adapter: " + properties[0].AdapterType);
+        Console.WriteLine(" - name: " + Marshal.PtrToStringAnsi((IntPtr)properties[0].Name));
+        Console.WriteLine(" - backend: " + properties[0].BackendType);
     }
 
     private void CreateApi()
@@ -103,19 +117,20 @@ public unsafe class Engine : IDisposable
 
     private void CreateDevice()
     {
-        PfnRequestDeviceCallback callback = PfnRequestDeviceCallback.From((status, wgpuDevice, messagePtr, userdataPtr) =>
-        {
-            if (status == RequestDeviceStatus.Success)
+        PfnRequestDeviceCallback callback = PfnRequestDeviceCallback.From(
+            (status, wgpuDevice, messagePtr, userdataPtr) =>
             {
-                Device = wgpuDevice;
-                Console.WriteLine("Created WebGPU Device: " + Device->ToString());
-            }
-            else
-            {
-                string errorMessage = Marshal.PtrToStringAnsi((IntPtr)messagePtr) ?? string.Empty;
-                Console.Error.WriteLine("Failed to create WebGPU Device: " + errorMessage);
-            }
-        });
+                if (status == RequestDeviceStatus.Success)
+                {
+                    Device = wgpuDevice;
+                    Console.WriteLine("Created WebGPU Device: " + Device->ToString());
+                }
+                else
+                {
+                    string errorMessage = Marshal.PtrToStringAnsi((IntPtr)messagePtr) ?? string.Empty;
+                    Console.Error.WriteLine("Failed to create WebGPU Device: " + errorMessage);
+                }
+            });
 
         DeviceDescriptor descriptor = new DeviceDescriptor();
         WGPU.AdapterRequestDevice(_adapter, descriptor, callback, null);
@@ -132,7 +147,7 @@ public unsafe class Engine : IDisposable
             PresentMode = PresentMode.Fifo,
             Usage = TextureUsage.RenderAttachment
         };
-        
+
         WGPU.SurfaceConfigure(_surface, configuration);
     }
 
@@ -143,7 +158,7 @@ public unsafe class Engine : IDisposable
             string errorMessage = Marshal.PtrToStringAnsi((IntPtr)messagePtr) ?? string.Empty;
             Console.Error.WriteLine("WebGPU Error: " + errorMessage);
         });
-        
+
         WGPU.DeviceSetUncapturedErrorCallback(Device, errorCallback, null);
     }
 
@@ -154,55 +169,55 @@ public unsafe class Engine : IDisposable
     public void OnUpdate(double deltaTime)
     {
     }
-    
+
 
     public void OnRenderWindow(double deltaTime)
     {
         BeforeRender();
-        
+
         OnRender?.Invoke();
-        
+
         AfterRender();
     }
-    
+
     private void BeforeRender()
-    { 
+    {
         // Queue
         _queue = WGPU.DeviceGetQueue(Device);
-        
+
         // Command encoder
         _currentCommandEncoder = WGPU.DeviceCreateCommandEncoder(Device, null);
 
         // Surface texture prep
         WGPU.SurfaceGetCurrentTexture(_surface, ref _surfaceTexture);
         _surfaceTextureView = WGPU.TextureCreateView(_surfaceTexture.Texture, null);
-        
+
         // Render pass encoder
         RenderPassColorAttachment* colorAttachments = stackalloc RenderPassColorAttachment[1];
         colorAttachments[0].View = _surfaceTextureView;
         colorAttachments[0].LoadOp = LoadOp.Clear;
         colorAttachments[0].ClearValue = new Color(0.1, 0.9, 0.9, 1.0);
         colorAttachments[0].StoreOp = StoreOp.Store;
-        
+
         RenderPassDescriptor descriptor = new RenderPassDescriptor
         {
             ColorAttachments = colorAttachments,
             ColorAttachmentCount = 1
         };
-        
+
         CurrentRenderPassEncoder = WGPU.CommandEncoderBeginRenderPass(_currentCommandEncoder, descriptor);
     }
 
     private void AfterRender()
     {
         WGPU.RenderPassEncoderEnd(CurrentRenderPassEncoder);
-        
+
         CommandBuffer* commandBuffer = WGPU.CommandEncoderFinish(_currentCommandEncoder, null);
-        
+
         WGPU.QueueSubmit(_queue, 1, &commandBuffer);
-        
+
         WGPU.SurfacePresent(_surface);
-        
+
         // Dispose of resources
         WGPU.TextureRelease(_surfaceTexture.Texture);
         WGPU.TextureViewRelease(_surfaceTextureView);
