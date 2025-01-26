@@ -3,7 +3,7 @@ using Buffer = Silk.NET.WebGPU.Buffer;
 
 namespace SourEngine.Buffers;
 
-public unsafe class IndexBuffer
+public unsafe class IndexBuffer : IDisposable
 {
     private readonly Engine _engine;
     
