@@ -12,7 +12,6 @@ public unsafe class Engine : IDisposable
     private Surface* _surface;
     private Adapter* _adapter;
 
-    private Queue* _queue;
     private CommandEncoder* _currentCommandEncoder;
     private SurfaceTexture _surfaceTexture;
     private TextureView* _surfaceTextureView;
@@ -24,6 +23,7 @@ public unsafe class Engine : IDisposable
     public WebGPU WGPU { get; private set; }
     public Device* Device { get; private set; }
     public RenderPassEncoder* CurrentRenderPassEncoder { get; private set; }
+    public Queue* Queue { get; private set; }
     public TextureFormat PreferredTextureFormat => TextureFormat.Bgra8Unorm;
 
     public void Initialize()
@@ -53,7 +53,10 @@ public unsafe class Engine : IDisposable
         _window.Load += OnLoad;
         _window.Update += OnUpdate;
         _window.Render += OnRenderWindow;
-
+        
+        // Queue
+        Queue = WGPU.DeviceGetQueue(Device);
+        
         OnInitialize?.Invoke();
 
         _window.Run();
@@ -184,7 +187,7 @@ public unsafe class Engine : IDisposable
     private void BeforeRender()
     {
         // Queue
-        _queue = WGPU.DeviceGetQueue(Device);
+        Queue = WGPU.DeviceGetQueue(Device);
 
         // Command encoder
         _currentCommandEncoder = WGPU.DeviceCreateCommandEncoder(Device, null);
@@ -215,7 +218,7 @@ public unsafe class Engine : IDisposable
 
         CommandBuffer* commandBuffer = WGPU.CommandEncoderFinish(_currentCommandEncoder, null);
 
-        WGPU.QueueSubmit(_queue, 1, &commandBuffer);
+        WGPU.QueueSubmit(Queue, 1, &commandBuffer);
 
         WGPU.SurfacePresent(_surface);
 

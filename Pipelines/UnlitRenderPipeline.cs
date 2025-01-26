@@ -1,6 +1,8 @@
 using System.Runtime.InteropServices;
 using Silk.NET.WebGPU;
+using SourEngine.Buffers;
 using SourEngine.Utils;
+using Buffer = Silk.NET.WebGPU.Buffer;
 
 namespace SourEngine.Pipelines;
 
@@ -22,9 +24,13 @@ public unsafe class UnlitRenderPipeline : IDisposable
         _engine.WGPU.ShaderModuleRelease(shaderModule);
     }
 
-    public void Render()
+    public void Render(VertexBuffer vertexBuffer)
     {
         _engine.WGPU.RenderPassEncoderSetPipeline(_engine.CurrentRenderPassEncoder, _renderPipeline);
+        
+        // Set buffers
+        _engine.WGPU.RenderPassEncoderSetVertexBuffer(_engine.CurrentRenderPassEncoder, 0, vertexBuffer.Buffer, 0, vertexBuffer.Size);
+        
         _engine.WGPU.RenderPassEncoderDraw(_engine.CurrentRenderPassEncoder, 3, 1, 0, 0);
     }
 
