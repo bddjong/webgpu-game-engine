@@ -4,7 +4,13 @@
     {
         static void Main(string[] args)
         {
-            Engine engine = new Engine();
+            var engine = new Engine();
+            
+            var unlitRenderPipeline = new Pipelines.UnlitRenderPipeline(engine);
+            engine.OnInitialize += unlitRenderPipeline.Initialize;
+            
+            engine.Initialize();
+            engine.Dispose();
         }
     }
 }

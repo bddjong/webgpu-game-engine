@@ -7,20 +7,24 @@ namespace SourEngine;
 
 public unsafe class Engine : IDisposable
 {
-    private readonly IWindow _window;
-    private WebGPU _wgpu;
+    private IWindow _window;
     private Instance* _instance;
     private Surface* _surface;
     private Adapter* _adapter;
-    private Device* _device;
 
     private Queue* _queue;
     private CommandEncoder* _currentCommandEncoder;
-    private RenderPassEncoder* _currentRenderPassEncoder;
     private SurfaceTexture _surfaceTexture;
     private TextureView* _surfaceTextureView;
 
-    public Engine()
+    public Action OnInitialize;
+    
+    public WebGPU WGPU { get; private set; }
+    public Device* Device { get; private set; }
+    public RenderPassEncoder* CurrentRenderPassEncoder { get; private set; }
+    public TextureFormat PreferredTextureFormat => TextureFormat.Bgra8Unorm;
+
+    public void Initialize()
     {
         WindowOptions windowOptions = WindowOptions.Default;
         windowOptions.Title = "Hello, World!";
@@ -46,25 +50,27 @@ public unsafe class Engine : IDisposable
         _window.Update += OnUpdate;
         _window.Render += OnRender;
 
+        OnInitialize?.Invoke();
+        
         _window.Run();
     }
 
     private void CreateApi()
     {
-        _wgpu = WebGPU.GetApi();
-        Console.WriteLine("Created WebGPU API" + _wgpu);
+        WGPU = WebGPU.GetApi();
+        Console.WriteLine("Created WebGPU API" + WGPU);
     }
 
     private void CreateInstance()
     {
         InstanceDescriptor descriptor = new InstanceDescriptor();
-        _instance = _wgpu.CreateInstance(descriptor);
+        _instance = WGPU.CreateInstance(descriptor);
         Console.WriteLine("Created WebGPU Instance: " + _instance->ToString());
     }
 
     private void CreateSurface()
     {
-        _surface = _window.CreateWebGPUSurface(_wgpu, _instance);
+        _surface = _window.CreateWebGPUSurface(WGPU, _instance);
         Console.WriteLine("Created WebGPU Surface: " + _surface->ToString());
     }
 
@@ -91,7 +97,7 @@ public unsafe class Engine : IDisposable
                 }
             });
 
-        _wgpu.InstanceRequestAdapter(_instance, options, callback, null);
+        WGPU.InstanceRequestAdapter(_instance, options, callback, null);
     }
 
     private void CreateDevice()
@@ -100,8 +106,8 @@ public unsafe class Engine : IDisposable
         {
             if (status == RequestDeviceStatus.Success)
             {
-                _device = wgpuDevice;
-                Console.WriteLine("Created WebGPU Device: " + _device->ToString());
+                Device = wgpuDevice;
+                Console.WriteLine("Created WebGPU Device: " + Device->ToString());
             }
             else
             {
@@ -111,22 +117,22 @@ public unsafe class Engine : IDisposable
         });
 
         DeviceDescriptor descriptor = new DeviceDescriptor();
-        _wgpu.AdapterRequestDevice(_adapter, descriptor, callback, null);
+        WGPU.AdapterRequestDevice(_adapter, descriptor, callback, null);
     }
 
     private void ConfigureSurface()
     {
         SurfaceConfiguration configuration = new SurfaceConfiguration
         {
-            Device = _device,
+            Device = Device,
             Width = (uint)_window.Size.X,
             Height = (uint)_window.Size.Y,
-            Format = TextureFormat.Bgra8Unorm,
+            Format = PreferredTextureFormat,
             PresentMode = PresentMode.Fifo,
             Usage = TextureUsage.RenderAttachment
         };
         
-        _wgpu.SurfaceConfigure(_surface, configuration);
+        WGPU.SurfaceConfigure(_surface, configuration);
     }
 
     private void ConfigureDebugCallback()
@@ -137,7 +143,7 @@ public unsafe class Engine : IDisposable
             Console.Error.WriteLine("WebGPU Error: " + errorMessage);
         });
         
-        _wgpu.DeviceSetUncapturedErrorCallback(_device, errorCallback, null);
+        WGPU.DeviceSetUncapturedErrorCallback(Device, errorCallback, null);
     }
 
     public void OnLoad()
@@ -158,14 +164,14 @@ public unsafe class Engine : IDisposable
     private void BeforeRender()
     { 
         // Queue
-        _queue = _wgpu.DeviceGetQueue(_device);
+        _queue = WGPU.DeviceGetQueue(Device);
         
         // Command encoder
-        _currentCommandEncoder = _wgpu.DeviceCreateCommandEncoder(_device, null);
+        _currentCommandEncoder = WGPU.DeviceCreateCommandEncoder(Device, null);
 
         // Surface texture prep
-        _wgpu.SurfaceGetCurrentTexture(_surface, ref _surfaceTexture);
-        _surfaceTextureView = _wgpu.TextureCreateView(_surfaceTexture.Texture, null);
+        WGPU.SurfaceGetCurrentTexture(_surface, ref _surfaceTexture);
+        _surfaceTextureView = WGPU.TextureCreateView(_surfaceTexture.Texture, null);
         
         // Render pass encoder
         RenderPassColorAttachment* colorAttachments = stackalloc RenderPassColorAttachment[1];
@@ -180,39 +186,39 @@ public unsafe class Engine : IDisposable
             ColorAttachmentCount = 1
         };
         
-        _currentRenderPassEncoder = _wgpu.CommandEncoderBeginRenderPass(_currentCommandEncoder, descriptor);
+        CurrentRenderPassEncoder = WGPU.CommandEncoderBeginRenderPass(_currentCommandEncoder, descriptor);
     }
 
     private void AfterRender()
     {
-        _wgpu.RenderPassEncoderEnd(_currentRenderPassEncoder);
+        WGPU.RenderPassEncoderEnd(CurrentRenderPassEncoder);
         
-        CommandBuffer* commandBuffer = _wgpu.CommandEncoderFinish(_currentCommandEncoder, null);
+        CommandBuffer* commandBuffer = WGPU.CommandEncoderFinish(_currentCommandEncoder, null);
         
-        _wgpu.QueueSubmit(_queue, 1, &commandBuffer);
+        WGPU.QueueSubmit(_queue, 1, &commandBuffer);
         
-        _wgpu.SurfacePresent(_surface);
+        WGPU.SurfacePresent(_surface);
         
         // Dispose of resources
-        _wgpu.TextureRelease(_surfaceTexture.Texture);
-        _wgpu.TextureViewRelease(_surfaceTextureView);
-        _wgpu.CommandBufferRelease(commandBuffer);
-        _wgpu.CommandEncoderRelease(_currentCommandEncoder);
-        _wgpu.RenderPassEncoderRelease(_currentRenderPassEncoder);
+        WGPU.TextureRelease(_surfaceTexture.Texture);
+        WGPU.TextureViewRelease(_surfaceTextureView);
+        WGPU.CommandBufferRelease(commandBuffer);
+        WGPU.CommandEncoderRelease(_currentCommandEncoder);
+        WGPU.RenderPassEncoderRelease(CurrentRenderPassEncoder);
     }
 
     public void Dispose()
     {
         Console.WriteLine("Disposing WebGPU resources");
-        _wgpu.DeviceDestroy(_device);
+        WGPU.DeviceDestroy(Device);
         Console.WriteLine("Destroyed WebGPU Device");
-        _wgpu.SurfaceRelease(_surface);
+        WGPU.SurfaceRelease(_surface);
         Console.WriteLine("Released WebGPU Surface");
-        _wgpu.AdapterRelease(_adapter);
+        WGPU.AdapterRelease(_adapter);
         Console.WriteLine("Released WebGPU Adapter");
-        _wgpu.InstanceRelease(_instance);
+        WGPU.InstanceRelease(_instance);
         Console.WriteLine("Released WebGPU Instance");
-        _wgpu.Dispose();
+        WGPU.Dispose();
         Console.WriteLine("Completed disposing WebGPU resources");
     }
 }
