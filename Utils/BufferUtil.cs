@@ -5,7 +5,7 @@ namespace SourEngine.Utils;
 
 public unsafe class BufferUtil
 {
-    public Buffer* Create(Engine engine, float[] data)
+    public Buffer* CreateVertexBuffer(Engine engine, float[] data)
     {
         uint size = (uint) data.Length * sizeof(float);
         BufferDescriptor bufferDescriptor = new BufferDescriptor
@@ -18,6 +18,25 @@ public unsafe class BufferUtil
         Buffer* buffer = engine.WGPU.DeviceCreateBuffer(engine.Device, bufferDescriptor);
         
         fixed (float* dataPtr = data)
+        {
+            engine.WGPU.QueueWriteBuffer(engine.Queue, buffer, 0, dataPtr, size);
+        }
+        
+        return buffer;
+    }
+    public Buffer* CreateIndexBuffer(Engine engine, ushort[] data)
+    {
+        uint size = (uint) data.Length * sizeof(ushort);
+        BufferDescriptor bufferDescriptor = new BufferDescriptor
+        {
+            MappedAtCreation = false,
+            Size = size,
+            Usage = BufferUsage.Index | BufferUsage.CopyDst
+        };
+        
+        Buffer* buffer = engine.WGPU.DeviceCreateBuffer(engine.Device, bufferDescriptor);
+        
+        fixed (ushort* dataPtr = data)
         {
             engine.WGPU.QueueWriteBuffer(engine.Queue, buffer, 0, dataPtr, size);
         }

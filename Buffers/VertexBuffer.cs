@@ -21,7 +21,7 @@ public unsafe class VertexBuffer : IDisposable
     public void Initialize(float[] data, uint vertexCount = 0)
     {
         Size = (uint) data.Length * sizeof(float);
-        Buffer = WebGPUUtil.Buffer.Create(_engine, data);
+        Buffer = WebGPUUtil.Buffer.CreateVertexBuffer(_engine, data);
         VertexCount = vertexCount;
     }
 

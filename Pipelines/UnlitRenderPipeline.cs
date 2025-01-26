@@ -20,18 +20,43 @@ public unsafe class UnlitRenderPipeline : IDisposable
     {
         ShaderModule* shaderModule = WebGPUUtil.ShaderModule.CreateShaderModule(_engine, "Shaders/unlit.wgsl");
         _renderPipeline = WebGPUUtil.RenderPipeline.Create(_engine, shaderModule);
-        
+
         _engine.WGPU.ShaderModuleRelease(shaderModule);
     }
 
-    public void Render(VertexBuffer vertexBuffer)
+    public void Render(VertexBuffer vertexBuffer, IndexBuffer? indexBuffer = null)
     {
         _engine.WGPU.RenderPassEncoderSetPipeline(_engine.CurrentRenderPassEncoder, _renderPipeline);
-        
-        // Set buffers
-        _engine.WGPU.RenderPassEncoderSetVertexBuffer(_engine.CurrentRenderPassEncoder, 0, vertexBuffer.Buffer, 0, vertexBuffer.Size);
-        
-        _engine.WGPU.RenderPassEncoderDraw(_engine.CurrentRenderPassEncoder, vertexBuffer.VertexCount, 1, 0, 0);
+
+        _engine.WGPU.RenderPassEncoderSetVertexBuffer(_engine.CurrentRenderPassEncoder,
+            0,
+            vertexBuffer.Buffer,
+            0,
+            vertexBuffer.Size);
+
+        if (indexBuffer != null)
+        {
+            _engine.WGPU.RenderPassEncoderSetIndexBuffer(_engine.CurrentRenderPassEncoder,
+                indexBuffer.Buffer,
+                IndexFormat.Uint16,
+                0,
+                indexBuffer.Size);
+            
+            _engine.WGPU.RenderPassEncoderDrawIndexed(_engine.CurrentRenderPassEncoder,
+                indexBuffer.IndicesCount,
+                1,
+                0,
+                0,
+                0);
+        }
+        else
+        {
+            _engine.WGPU.RenderPassEncoderDraw(_engine.CurrentRenderPassEncoder,
+                vertexBuffer.VertexCount,
+                1,
+                0,
+                0);
+        }
     }
 
     public void Dispose()
