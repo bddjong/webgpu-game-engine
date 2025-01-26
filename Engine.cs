@@ -38,6 +38,9 @@ public unsafe class Engine : IDisposable
         _window.Initialize();
         //TODO: save last monitor location
         _window.Monitor = Monitor.GetMonitors(null).Last();
+        _window.Position = new Vector2D<int>(
+            _window.Monitor.Bounds.Center.X - _window.Size.X / 2, 
+            _window.Monitor.Bounds.Center.Y - _window.Size.Y / 2);
 
         // API setup
         CreateApi();

@@ -31,7 +31,7 @@ public unsafe class UnlitRenderPipeline : IDisposable
         // Set buffers
         _engine.WGPU.RenderPassEncoderSetVertexBuffer(_engine.CurrentRenderPassEncoder, 0, vertexBuffer.Buffer, 0, vertexBuffer.Size);
         
-        _engine.WGPU.RenderPassEncoderDraw(_engine.CurrentRenderPassEncoder, 3, 1, 0, 0);
+        _engine.WGPU.RenderPassEncoderDraw(_engine.CurrentRenderPassEncoder, vertexBuffer.VertexCount, 1, 0, 0);
     }
 
     public void Dispose()
