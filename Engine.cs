@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Silk.NET.GLFW;
 using Silk.NET.Maths;
 using Silk.NET.WebGPU;
 using Silk.NET.Windowing;
@@ -32,15 +33,13 @@ public unsafe class Engine : IDisposable
         WindowOptions windowOptions = WindowOptions.Default;
         windowOptions.Title = "Hello, World!";
         windowOptions.Size = new Vector2D<int>(800, 600);
-        
-        _window = Window.Create(WindowOptions.Default);
+        windowOptions.API = GraphicsAPI.None;
+
+        _window = Window.Create(windowOptions);
 
         _window.Initialize();
-        //TODO: save last monitor location
         _window.Monitor = Monitor.GetMonitors(null).Last();
-        _window.Position = new Vector2D<int>(
-            _window.Monitor.Bounds.Center.X - _window.Size.X / 2, 
-            _window.Monitor.Bounds.Center.Y - _window.Size.Y / 2);
+        _window.Position = _window.Monitor.Bounds.Center - _window.Size / 2;
 
         // API setup
         CreateApi();
@@ -59,10 +58,11 @@ public unsafe class Engine : IDisposable
         _window.Load += OnLoad;
         _window.Update += OnUpdate;
         _window.Render += OnRenderWindow;
-        
+        _window.Move += OnMove;
+
         // Queue
         Queue = WGPU.DeviceGetQueue(Device);
-        
+
         OnInitialize?.Invoke();
 
         _window.Run();
@@ -180,6 +180,11 @@ public unsafe class Engine : IDisposable
     {
     }
 
+    public void OnMove(Vector2D<int> vector2D)
+    {
+        
+    }
+
 
     public void OnRenderWindow(double deltaTime)
     {
@@ -239,7 +244,7 @@ public unsafe class Engine : IDisposable
     public void Dispose()
     {
         OnDispose?.Invoke();
-        
+
         Console.WriteLine("Disposing WebGPU resources");
         WGPU.DeviceDestroy(Device);
         Console.WriteLine("Destroyed WebGPU Device");
