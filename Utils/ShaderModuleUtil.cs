@@ -36,7 +36,7 @@ public unsafe class ShaderModuleUtil
                 return;
             }
             
-            string message = Marshal.PtrToStringAnsi((IntPtr)messagePtr);
+            string message = Marshal.PtrToStringAnsi((IntPtr)messagePtr) ?? string.Empty;
             Console.WriteLine($"Error: {errorType}, {message}");
             throw new InvalidOperationException(message);
         }), null);
