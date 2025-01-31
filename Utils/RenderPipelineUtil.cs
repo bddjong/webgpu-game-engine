@@ -11,26 +11,35 @@ public unsafe class RenderPipelineUtil
         string vertexFnName = "main_vs", 
         string fragmentFnName = "main_fs")
     {
-        VertexAttribute* vertexAttributes = stackalloc VertexAttribute[2];
+        var vertexFnNamePtr = Marshal.StringToHGlobalAnsi(vertexFnName);
+        var fragmentFnNamePtr = Marshal.StringToHGlobalAnsi(fragmentFnName);
+        
+        VertexAttribute* vertexAttributes = stackalloc VertexAttribute[3];
+        // Vertex pos
         vertexAttributes[0].Format = VertexFormat.Float32x3;
         vertexAttributes[0].ShaderLocation = 0;
         vertexAttributes[0].Offset = 0;
+        //Vertex colors
         vertexAttributes[1].Format = VertexFormat.Float32x4;
         vertexAttributes[1].ShaderLocation = 1;
         vertexAttributes[1].Offset = sizeof(float) * 3;
+        //Vertex UV
+        vertexAttributes[2].Format = VertexFormat.Float32x2;
+        vertexAttributes[2].ShaderLocation = 2;
+        vertexAttributes[2].Offset = sizeof(float) * (3 + 4);
         
         VertexBufferLayout layout = new VertexBufferLayout
         {
             StepMode = VertexStepMode.Vertex,
             Attributes = vertexAttributes,
-            AttributeCount = 2,
-            ArrayStride = 7 * sizeof(float)
+            AttributeCount = 3,
+            ArrayStride = 9 * sizeof(float) // memory size of positions + colors + uvs (all floats)
         };
         
         VertexState vertexState = new VertexState
         {
             Module = shaderModule,
-            EntryPoint = (byte*)Marshal.StringToHGlobalAnsi(vertexFnName),
+            EntryPoint = (byte*)vertexFnNamePtr,
             Buffers = &layout,
             BufferCount = 1
         };
@@ -57,7 +66,7 @@ public unsafe class RenderPipelineUtil
         FragmentState fragmentState = new FragmentState
         {
             Module = shaderModule,
-            EntryPoint = (byte*)Marshal.StringToHGlobalAnsi(fragmentFnName),
+            EntryPoint = (byte*)fragmentFnNamePtr,
             Targets = colorTargetState,
             TargetCount = 1
         };
@@ -84,6 +93,10 @@ public unsafe class RenderPipelineUtil
         
         RenderPipeline* renderPipeline = engine.WGPU.DeviceCreateRenderPipeline(engine.Device, pipelineDescriptor);
         Console.WriteLine("Created render pipeline");
+        
+        Marshal.FreeHGlobal(vertexFnNamePtr);
+        Marshal.FreeHGlobal(fragmentFnNamePtr);
+        
         return renderPipeline;
     }
 

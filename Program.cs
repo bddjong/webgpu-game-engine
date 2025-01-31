@@ -1,4 +1,6 @@
 ﻿using Silk.NET.Maths;
+using SkiaSharp;
+using SourEngine.Texture;
 
 namespace SourEngine
 {
@@ -11,23 +13,35 @@ namespace SourEngine
             var unlitRenderPipeline = new Pipelines.UnlitRenderPipeline(engine);
             var vertexBuffer = new Buffers.VertexBuffer(engine);
             var indexBuffer = new Buffers.IndexBuffer(engine);
+            SKImage image = SKImage.FromEncodedData("Assets/test.png");
+            Texture2D? texture = null;
 
             float scale = 1f;
             int scaleDirection = 1;
 
             engine.OnInitialize += () =>
             {
+                if (image == null)
+                {
+                    throw new FileNotFoundException("Unable to load test image.");
+                }
+                
+                texture = new Texture2D(engine, image, "Texture2D");
+                texture.Initialize();
+                
+                
                 unlitRenderPipeline.Initialize();
+                unlitRenderPipeline.Texture = texture;
                 vertexBuffer.Initialize([
                     // First triangle
-                    -0.5f, -0.5f, 0f, 1, 0, 0, 1,
-                    0.5f, -0.5f, 0f, 0, 1, 0, 1,
-                    0.5f, 0.5f, 0f, 0, 0, 1, 1,
-                    -0.5f, 0.5f, 0f, 1, 0, 1, 1,
+                    -0.5f, -0.5f, 0f,  1, 0, 0, 1,  0, 1,   
+                     0.5f, -0.5f, 0f,  0, 1, 0, 1,  1, 1,
+                    -0.5f,  0.5f, 0f,  0, 0, 1, 1,  0, 0,
+                     0.5f,  0.5f, 0f,  1, 0, 1, 1,  1, 0
                 ], 6);
                 indexBuffer.Initialize([
                     0, 1, 2,
-                    2, 3, 0,
+                    1, 3, 2,
                 ]);
             };
             engine.OnRender += () =>
@@ -51,6 +65,7 @@ namespace SourEngine
                 unlitRenderPipeline.Dispose();
                 vertexBuffer.Dispose();
                 indexBuffer.Dispose();
+                texture?.Dispose();
             };
 
             engine.Initialize();
